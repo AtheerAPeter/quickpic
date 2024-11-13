@@ -5,7 +5,7 @@ import { useState, type ChangeEvent, useEffect } from "react";
 
 export default function ImageSizeCompressor() {
   const [images, setImages] = useState<File[]>([]);
-  const [quality, setQuality] = useState(0.8);
+  const [quality, setQuality] = useState<number[]>([0.8]);
   const [compressedPreview, setCompressedPreview] = useState<string | null>(
     null,
   );
@@ -22,8 +22,14 @@ export default function ImageSizeCompressor() {
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
   }
 
-  async function compressImage(image: File, quality: number): Promise<File> {
+  async function compressImage(
+    image: File,
+    quality: number | undefined,
+  ): Promise<File> {
     return new Promise((resolve, reject) => {
+      if (quality === undefined) {
+        return reject(new Error("Quaility can't be undefined"));
+      }
       const img = new Image();
       const imageUrl = URL.createObjectURL(image);
 
@@ -76,11 +82,17 @@ export default function ImageSizeCompressor() {
     if (!e.target.files) return;
 
     const newFiles = Array.from(e.target.files);
+    const newQualities = new Array<number>(newFiles.length).fill(0.8);
+
     setImages((prev) => [...prev, ...newFiles]);
+    setQuality((prev) => [...prev, ...newQualities]);
   }
 
   function handleImageDrop(files: FileList) {
+    const newQualities = new Array<number>(files.length).fill(0.8);
+
     setImages((prev) => [...prev, ...files]);
+    setQuality((prev) => [...prev, ...newQualities]);
   }
 
   useEffect(() => {
@@ -88,12 +100,16 @@ export default function ImageSizeCompressor() {
     setOriginalSize(formatFileSize(images[currentIndex].size));
 
     async function generateCompressedPreview() {
-      if (images[currentIndex] === undefined) return;
+      if (
+        images[currentIndex] === undefined ||
+        quality[currentIndex] === undefined
+      )
+        return;
       setIsCompressing(true);
       try {
         const compressedFile = await compressImage(
           images[currentIndex],
-          quality,
+          quality[currentIndex],
         );
         setCompressedPreview(URL.createObjectURL(compressedFile));
         setCompressedSize(formatFileSize(compressedFile.size));
@@ -124,7 +140,7 @@ export default function ImageSizeCompressor() {
     try {
       setIsCompressing(true);
       const compressedFiles = await Promise.all(
-        images.map((image) => compressImage(image, quality)),
+        images.map((image, i) => compressImage(image, quality[i])),
       );
 
       compressedFiles.forEach((file, index) => {
@@ -142,7 +158,9 @@ export default function ImageSizeCompressor() {
   }
 
   function onChangeQuality(e: ChangeEvent<HTMLInputElement>) {
-    setQuality(parseFloat(e.target.value));
+    const newQuantity = [...quality];
+    newQuantity[currentIndex] = parseFloat(e.target.value);
+    setQuality(newQuantity);
   }
 
   function onCancel() {
@@ -201,19 +219,25 @@ export default function ImageSizeCompressor() {
         ))}
       </div>
 
-      <div className="flex w-full max-w-md flex-col gap-2">
-        <label className="text-sm">Quality: {Math.round(quality * 100)}%</label>
-        <input
-          type="range"
-          min="0.1"
-          max="1"
-          step="0.1"
-          value={quality}
-          onChange={onChangeQuality}
-          className="w-full"
-          disabled={isCompressing}
-        />
-      </div>
+      {quality[currentIndex] !== undefined ? (
+        <div className="flex w-full max-w-md flex-col gap-2">
+          <label className="text-sm">
+            Quality: {Math.round(quality[currentIndex] * 100)}%
+          </label>
+          <input
+            type="range"
+            min="0.1"
+            max="1"
+            step="0.1"
+            value={quality[currentIndex]}
+            onChange={onChangeQuality}
+            className="w-full"
+            disabled={isCompressing}
+          />
+        </div>
+      ) : (
+        <p>Strange! There is no file selected</p>
+      )}
 
       {images.length > 1 && (
         <p className="inline-block rounded-full border border-white/30 bg-white/5 px-2 py-0.5 text-center text-sm text-white/60">
