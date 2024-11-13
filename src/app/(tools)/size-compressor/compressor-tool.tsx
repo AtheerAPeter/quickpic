@@ -5,6 +5,7 @@ import { useState, type ChangeEvent, useEffect } from "react";
 
 export default function ImageSizeCompressor() {
   const [images, setImages] = useState<File[]>([]);
+  const [globalQuality, setGlobalQuality] = useState<number | undefined>(0.8);
   const [quality, setQuality] = useState<number[]>([0.8]);
   const [compressedPreview, setCompressedPreview] = useState<string | null>(
     null,
@@ -100,16 +101,12 @@ export default function ImageSizeCompressor() {
     setOriginalSize(formatFileSize(images[currentIndex].size));
 
     async function generateCompressedPreview() {
-      if (
-        images[currentIndex] === undefined ||
-        quality[currentIndex] === undefined
-      )
-        return;
+      if (images[currentIndex] === undefined) return;
       setIsCompressing(true);
       try {
         const compressedFile = await compressImage(
           images[currentIndex],
-          quality[currentIndex],
+          globalQuality ?? quality[currentIndex],
         );
         setCompressedPreview(URL.createObjectURL(compressedFile));
         setCompressedSize(formatFileSize(compressedFile.size));
@@ -125,7 +122,7 @@ export default function ImageSizeCompressor() {
     return () => {
       clearTimeout(debounceTimeout);
     };
-  }, [images, quality, currentIndex]);
+  }, [images, quality, currentIndex, globalQuality]);
 
   function removeImage(index: number) {
     setImages((prev) => prev.filter((_, i) => i !== index));
@@ -140,7 +137,9 @@ export default function ImageSizeCompressor() {
     try {
       setIsCompressing(true);
       const compressedFiles = await Promise.all(
-        images.map((image, i) => compressImage(image, quality[i])),
+        images.map((image, i) =>
+          compressImage(image, globalQuality ?? quality[i]),
+        ),
       );
 
       compressedFiles.forEach((file, index) => {
@@ -158,9 +157,15 @@ export default function ImageSizeCompressor() {
   }
 
   function onChangeQuality(e: ChangeEvent<HTMLInputElement>) {
-    const newQuantity = [...quality];
-    newQuantity[currentIndex] = parseFloat(e.target.value);
-    setQuality(newQuantity);
+    console.log(`globalQuality -> ${globalQuality}`);
+    console.log(`quality -> ${quality[currentIndex]}`);
+    if (globalQuality === undefined) {
+      const newQuantity = [...quality];
+      newQuantity[currentIndex] = parseFloat(e.target.value);
+      setQuality(newQuantity);
+    } else {
+      setGlobalQuality(parseFloat(e.target.value));
+    }
   }
 
   function onCancel() {
@@ -219,7 +224,7 @@ export default function ImageSizeCompressor() {
         ))}
       </div>
 
-      {quality[currentIndex] !== undefined ? (
+      {/* {quality[currentIndex] !== undefined ? (
         <div className="flex w-full max-w-md flex-col gap-2">
           <label className="text-sm">
             Quality: {Math.round(quality[currentIndex] * 100)}%
@@ -237,7 +242,40 @@ export default function ImageSizeCompressor() {
         </div>
       ) : (
         <p>Strange! There is no file selected</p>
-      )}
+      )} */}
+      <div className="flex w-full items-start gap-4">
+        <div className="flex w-full max-w-md flex-col gap-2">
+          <label className="text-sm">
+            Quality:{" "}
+            {Math.round((globalQuality ?? quality[currentIndex] ?? 0.8) * 100)}%
+          </label>
+          <input
+            type="range"
+            min="0.1"
+            max="1"
+            step="0.1"
+            value={globalQuality ?? quality[currentIndex] ?? 0.8}
+            onChange={onChangeQuality}
+            className="w-full"
+            disabled={isCompressing}
+          />
+        </div>
+        <label className="inline-flex cursor-pointer items-center">
+          <input
+            type="checkbox"
+            checked={globalQuality ? true : false}
+            className="peer sr-only"
+            onChange={() => {
+              if (globalQuality === undefined) setGlobalQuality(0.8);
+              else setGlobalQuality(undefined);
+            }}
+          />
+          <div className="peer relative h-5 w-9 rounded-full bg-gray-200 after:absolute after:start-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-blue-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rtl:peer-checked:after:-translate-x-full dark:border-gray-600 dark:bg-gray-700 dark:peer-focus:ring-blue-800"></div>
+          <span className="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">
+            Global Quality
+          </span>
+        </label>
+      </div>
 
       {images.length > 1 && (
         <p className="inline-block rounded-full border border-white/30 bg-white/5 px-2 py-0.5 text-center text-sm text-white/60">
