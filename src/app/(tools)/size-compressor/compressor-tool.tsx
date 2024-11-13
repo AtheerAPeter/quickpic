@@ -277,12 +277,6 @@ export default function ImageSizeCompressor() {
         </label>
       </div>
 
-      {images.length > 1 && (
-        <p className="inline-block rounded-full border border-white/30 bg-white/5 px-2 py-0.5 text-center text-sm text-white/60">
-          All images share the same quality range
-        </p>
-      )}
-
       {images.length > 0 && (
         <div className="flex gap-8">
           <div className="flex flex-col items-center gap-2">
