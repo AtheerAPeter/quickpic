@@ -164,7 +164,6 @@ export default function ImageSizeCompressor() {
       >
         <UploadBox
           title="Compress your images to reduce file size."
-          subtitle="Allows pasting images from clipboard"
           description="Upload Images"
           allow_multiple={true}
           accept="image/*"
