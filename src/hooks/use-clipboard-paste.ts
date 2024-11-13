@@ -3,7 +3,7 @@
 import { useEffect, useCallback } from "react";
 
 interface UseClipboardPasteProps {
-  onPaste: (file: File) => void;
+  onPaste: (files: FileList) => void;
   acceptedFileTypes: string[];
 }
 
@@ -15,8 +15,9 @@ export function useClipboardPaste({
     async (event: ClipboardEvent) => {
       const items = event.clipboardData?.items;
       if (!items) return;
-
-      for (const item of Array.from(items)) {
+      const items_array = Array.from(items);
+      const acceptedFilesItems = new ClipboardEvent("").clipboardData;
+      for (const item of items_array) {
         if (item.type.startsWith("image/")) {
           const file = item.getAsFile();
           if (!file) continue;
@@ -30,10 +31,12 @@ export function useClipboardPaste({
 
           if (isAcceptedType) {
             event.preventDefault();
-            onPaste(file);
-            break;
+            acceptedFilesItems?.items.add(file);
           }
         }
+      }
+      if (acceptedFilesItems?.items) {
+        onPaste(acceptedFilesItems.files);
       }
     },
     [onPaste, acceptedFileTypes],

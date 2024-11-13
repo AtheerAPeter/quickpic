@@ -1,4 +1,6 @@
 "use client";
+import { FileDropzone } from "@/components/shared/file-dropzone";
+import { UploadBox } from "@/components/shared/upload-box";
 import { useState, type ChangeEvent, useEffect } from "react";
 
 export default function ImageSizeCompressor() {
@@ -76,6 +78,10 @@ export default function ImageSizeCompressor() {
     setImages((prev) => [...prev, ...newFiles]);
   }
 
+  function handleImageDrop(files: FileList) {
+    setImages((prev) => [...prev, ...files]);
+  }
+
   useEffect(() => {
     if (images[0] === undefined) return;
     setOriginalSize(formatFileSize(images[0].size));
@@ -144,21 +150,27 @@ export default function ImageSizeCompressor() {
 
   if (images.length === 0) {
     return (
-      <div className="flex flex-col gap-4 p-4">
-        <p className="text-center">Compress your images to reduce file size.</p>
-        <div className="flex justify-center">
-          <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white shadow-md transition-colors duration-200 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75">
-            <span>Upload Images</span>
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              className="hidden"
-              onChange={handleImageUpload}
-            />
-          </label>
-        </div>
-      </div>
+      <FileDropzone
+        acceptedFileTypes={[
+          "image/*",
+          ".jpg",
+          ".jpeg",
+          ".png",
+          ".webp",
+          ".svg",
+        ]}
+        dropText="Drop image file"
+        setCurrentFile={handleImageDrop}
+      >
+        <UploadBox
+          title="Compress your images to reduce file size."
+          subtitle="Allows pasting images from clipboard"
+          description="Upload Images"
+          allow_multiple={true}
+          accept="image/*"
+          onChange={handleImageUpload}
+        />
+      </FileDropzone>
     );
   }
 
