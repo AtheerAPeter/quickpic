@@ -4,7 +4,7 @@ interface FileDropzoneProps {
   children: React.ReactNode;
   acceptedFileTypes: string[];
   dropText: string;
-  setCurrentFile: (file: File) => void;
+  setCurrentFile: (files: FileList) => void;
 }
 
 export function FileDropzone({
@@ -50,25 +50,25 @@ export function FileDropzone({
 
       const files = e.dataTransfer?.files;
       if (files && files.length > 0) {
-        const droppedFile = files[0];
+        for (const droppedFile of files) {
+          if (!droppedFile) {
+            alert("How did you do a drop with no files???");
+            throw new Error("No files dropped");
+          }
 
-        if (!droppedFile) {
-          alert("How did you do a drop with no files???");
-          throw new Error("No files dropped");
-        }
-
-        if (
-          !acceptedFileTypes.includes(droppedFile.type) &&
-          !acceptedFileTypes.some((type) =>
-            droppedFile.name.toLowerCase().endsWith(type.replace("*", "")),
-          )
-        ) {
-          alert("Invalid file type. Please upload a supported file type.");
-          throw new Error("Invalid file");
+          if (
+            !acceptedFileTypes.includes(droppedFile.type) &&
+            !acceptedFileTypes.some((type) =>
+              droppedFile.name.toLowerCase().endsWith(type.replace("*", "")),
+            )
+          ) {
+            alert("Invalid file type. Please upload a supported file type.");
+            throw new Error("Invalid file");
+          }
         }
 
         // Happy path
-        setCurrentFile(droppedFile);
+        setCurrentFile(files);
       }
     },
     [acceptedFileTypes, setCurrentFile],

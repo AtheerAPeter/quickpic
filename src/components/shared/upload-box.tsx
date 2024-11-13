@@ -5,6 +5,7 @@ interface UploadBoxProps {
   subtitle?: string;
   description: string;
   accept: string;
+  allow_multiple?: boolean;
   onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
@@ -13,6 +14,7 @@ export function UploadBox({
   subtitle,
   description,
   accept,
+  allow_multiple,
   onChange,
 }: UploadBoxProps) {
   return (
@@ -47,6 +49,7 @@ export function UploadBox({
             type="file"
             onChange={onChange}
             accept={accept}
+            multiple={allow_multiple}
             className="hidden"
           />
         </label>
