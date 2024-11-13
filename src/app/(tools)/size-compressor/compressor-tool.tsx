@@ -9,6 +9,7 @@ export default function ImageSizeCompressor() {
   const [compressedPreview, setCompressedPreview] = useState<string | null>(
     null,
   );
+  const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [originalSize, setOriginalSize] = useState<string>("");
   const [compressedSize, setCompressedSize] = useState<string>("");
   const [isCompressing, setIsCompressing] = useState(false);
@@ -83,14 +84,17 @@ export default function ImageSizeCompressor() {
   }
 
   useEffect(() => {
-    if (images[0] === undefined) return;
-    setOriginalSize(formatFileSize(images[0].size));
+    if (images[currentIndex] === undefined) return;
+    setOriginalSize(formatFileSize(images[currentIndex].size));
 
     async function generateCompressedPreview() {
-      if (images[0] === undefined) return;
+      if (images[currentIndex] === undefined) return;
       setIsCompressing(true);
       try {
-        const compressedFile = await compressImage(images[0], quality);
+        const compressedFile = await compressImage(
+          images[currentIndex],
+          quality,
+        );
         setCompressedPreview(URL.createObjectURL(compressedFile));
         setCompressedSize(formatFileSize(compressedFile.size));
       } finally {
@@ -105,7 +109,7 @@ export default function ImageSizeCompressor() {
     return () => {
       clearTimeout(debounceTimeout);
     };
-  }, [images, quality]);
+  }, [images, quality, currentIndex]);
 
   function removeImage(index: number) {
     setImages((prev) => prev.filter((_, i) => i !== index));
@@ -182,6 +186,10 @@ export default function ImageSizeCompressor() {
               src={URL.createObjectURL(image)}
               alt={`Preview ${index + 1}`}
               className="h-32 w-32 rounded-lg object-cover"
+              role="button"
+              onClick={() => {
+                setCurrentIndex(index);
+              }}
             />
             <button
               onClick={() => removeImage(index)}
@@ -207,12 +215,22 @@ export default function ImageSizeCompressor() {
         />
       </div>
 
+      {images.length > 1 && (
+        <p className="inline-block rounded-full border border-white/30 bg-white/5 px-2 py-0.5 text-center text-sm text-white/60">
+          All images share the same quality range
+        </p>
+      )}
+
       {images.length > 0 && (
         <div className="flex gap-8">
           <div className="flex flex-col items-center gap-2">
             <span className="text-sm font-medium">Original</span>
             <img
-              src={images[0] ? URL.createObjectURL(images[0]) : ""}
+              src={
+                images[currentIndex]
+                  ? URL.createObjectURL(images[currentIndex])
+                  : ""
+              }
               alt="Original preview"
               className="h-64 w-64 rounded-lg object-cover"
             />
@@ -224,7 +242,9 @@ export default function ImageSizeCompressor() {
               <img
                 src={
                   compressedPreview ??
-                  (images[0] ? URL.createObjectURL(images[0]) : "")
+                  (images[currentIndex]
+                    ? URL.createObjectURL(images[currentIndex])
+                    : "")
                 }
                 alt="Compressed preview"
                 className="h-64 w-64 rounded-lg object-cover"
